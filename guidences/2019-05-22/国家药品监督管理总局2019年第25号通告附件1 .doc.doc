@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>国家药品监督管理局</title>
+	<link rel="shortcut icon" href="http://www.nmpa.gov.cn/favicon.ico">
+	<link rel="bookmark" href="favicon.ico">
+    <style>
+	body.bg-fff,.bg-fff{
+	background: #fff;
+	margin:0px;
+	padding:0px;
+	}
+	.w1200-auto{
+		width: 1200px;
+		margin: 0 auto;
+	}
+	h1{font-size:30px;font-family:微软雅黑;color:#595959;font-weight:normal}
+	.button {	
+		display: inline-block;
+		border-radius: 6px;
+		background-color: #035c9f;
+		border: none;
+		color: #FFFFFF;
+		text-align: center;
+		font-size: 28px;
+		padding: 20px;
+		width: 200px;
+		transition: all 0.5s;
+		cursor: pointer;
+		margin: 5px;
+	}		
+	.button span {
+		cursor: pointer;
+		display: inline-block;
+		position: relative;
+		transition: 0.5s;
+	}		
+	.button span:after {
+		content: '»';
+		position: absolute;
+		opacity: 0;
+		top: 0;
+		right: -20px;
+		transition: 0.5s;
+	}		
+	.button:hover span {
+		padding-right: 25px;
+	}
+		
+	.button:hover span:after {
+		opacity: 1;
+		right: 0;
+	}
+	.button1 {
+		background-color: #035c9f; 
+		color: white; 
+	}		
+	.button1:hover {
+		background-color: #2188d5;
+		color: white;
+	}
+	.logo{
+		width: 511px;
+		height: 94px;
+		padding-top: 6px;
+	}
+	.logo img{
+		height: 94px;
+	}
+	.wenzhang-line{
+		border-top: 5px solid #2b5aaa;
+	}
+	.fl-l{
+		float: left;
+	}
+    </style>
+</head>
+<body class="bg-fff">
+	<div class="w1200-auto clearfix" style="width: 1200px; min-width: 1200px; margin: 0px auto;">
+        <div class="logo">
+            <a href="http://www.nmpa.gov.cn"><img src="http://www.nmpa.gov.cn/logo.png" alt=""></a>
+        </div>
+    </div>
+	<div class="wenzhang-line" style="min-width: 1200px; margin: 0px auto;"></div>
+    <div class="w1200-auto" style="margin-top:0px;background:url(http://www.nmpa.gov.cn/tsh.jpg) no-repeat;width:900px;height:400px;text-align:center;border:0px #000 solid;padding-top:80px;padding-left:260px">
+        <h2><font color='#595959'>国家药品监督管理局网站地址已变更为</font><br><a onClick="javascript:window.opener=null;window.open('http://www.nmpa.gov.cn','_blank');"><font color='#164f8e'>https://www.nmpa.gov.cn/</font></a><br><font color='#595959'>请您访问新的地址，谢谢！</font></h2><br>
+        <font color='#595959'><span id="totalSecond">3</span>秒后自动跳转首页</font>
+        <a href="http://www.nmpa.gov.cn"><img src=""></a>
+        <br><br><br>
+        <button class="button button1" onClick="javascript:window.opener=null;window.open('http://www.nmpa.gov.cn','_blank');" style="vertical-align:middle"><span>返回首页 </span></button>
+        
+    </div>
+</body>
+<script language="javascript" type="text/javascript">
+<!--
+    var second = document.getElementById('totalSecond').textContent;
+    if (navigator.appName.indexOf("Explorer") > -1)  //判断是IE浏览器还是Firefox浏览器，采用相应措施取得秒数
+    {
+        second = document.getElementById('totalSecond').innerText;
+    } else
+    {
+        second = document.getElementById('totalSecond').textContent;
+    }
+    setInterval("redirect()", 1000);  //每1秒钟调用redirect()方法一次
+    function redirect()
+    {
+        if (second < 0)
+        {
+            location.href = 'http://www.nmpa.gov.cn';
+        } else
+        {
+            if (navigator.appName.indexOf("Explorer") > -1)
+            {
+                document.getElementById('totalSecond').innerText = second--;
+            } else
+            {
+                document.getElementById('totalSecond').textContent = second--;
+            }
+        }
+    }
+-->
+</script>
+</html>

@@ -4,6 +4,9 @@ import os
 import re
 import requests
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
@@ -140,13 +143,23 @@ def download_guidence(link: str, save_path: str) -> None:
         save_path (str): 文件保存路径。
     """
 
-    response = requests.get(link)
-    if response.status_code == 200:
+    retry_strategy = Retry(
+        total=3,
+        status_forcelist=[443, 500, 502, 503, 504],
+        backoff_factor=1,
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
+    try:
+        response = session.get(link, timeout=5)
         with open(save_path, "wb") as f:
             f.write(response.content)
-    else:
+    except requests.exceptions.RequestException as e:
         print(f"Failed to download {link}")
-        print(f"Status code: {response.status_code}")
+        print(e)
 
 
 def get_accessories_from_publish_page(
@@ -206,8 +219,11 @@ def get_accessories_from_publish_page(
             accessory_title = accessory_text + file_extension
 
         # 处理文件名
-        # 删除前缀 "附件x"
+        # 删除前缀 "附件x" 等多余字符
         accessory_title = re.sub(r"^附件\d+\s*[-\.：]?\s*", "", accessory_title)
+
+        # 将文件名中的非法字符替换为连字符
+        accessory_title = re.sub(r"[\\/:*?\"<>|]", "-", accessory_title)
 
         # 跳过不需要的文件
         if any([regex.search(accessory_title) for regex in regex_filter_title_list]):
@@ -237,5 +253,5 @@ def jinja_render(guidence_publish_page_list: list[GuidencePublishPage]) -> None:
         guidence_list=guidence_publish_page_list, enumerate=enumerate
     )
 
-    with open("guidence-list.md", "w") as f:
+    with open("guidence-list.md", "w", encoding="utf-8") as f:
         f.write(rendered_markdown)
