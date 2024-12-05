@@ -5,10 +5,10 @@ import os
 import re
 
 
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-
-logger = logging.getLogger()
+from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 @dataclasses.dataclass
@@ -37,8 +37,12 @@ class GuidencePublishPage:
         return "<ul>" + "".join(accessories_md_list) + "</ul>"
 
 
+def wait_for_element(driver, by, value, timeout=10) -> EC.WebElement:
+    return WebDriverWait(driver, timeout).until(EC.presence_of_element_located((by, value)))
+
+
 def get_guidence_publish_pages(
-    url: str, start_date: datetime.date, end_date: datetime.date, driver: webdriver.Firefox
+    url: str, start_date: datetime.date, end_date: datetime.date, driver: WebDriver
 ) -> list[GuidencePublishPage]:
     """
     获取目标日期范围内的指导原则发布页列表。
@@ -47,7 +51,7 @@ def get_guidence_publish_pages(
         url (str): 目标 url。
         start_date (datetime.date): 目标起始日期。
         end_date (datetime.date): 目标结束日期。
-        driver (webdriver.Firefox): WebDriver 实例。
+        driver (WebDriver): WebDriver 实例。
     Returns:
         list[GuidencePublishPage]: 指导原则发布页列表。
     """
@@ -60,6 +64,8 @@ def get_guidence_publish_pages(
     # 定义选择器
     selector_list_item = ".list li:has(a[href$='.html'])"
 
+    wait_for_element(driver, By.CSS_SELECTOR, selector_list_item)
+
     if elements := driver.find_elements(by=By.CSS_SELECTOR, value=selector_list_item):
         # 如果当前页的发布日期均不在目标日期范围内，提前返回
         oldest_date_in_current_page = datetime.datetime.strptime(
@@ -69,7 +75,7 @@ def get_guidence_publish_pages(
             elements[0].find_element(by=By.TAG_NAME, value="span").text, "(%Y-%m-%d)"
         ).date()
         if oldest_date_in_current_page > end_date or newest_date_in_current_page < start_date:
-            logger.info(f"页面 {url} 中找不到 {start_date} ~ {end_date} 期间发布的指导原则。")
+            logging.info(f"页面 {url} 中找不到 {start_date} ~ {end_date} 期间发布的指导原则。")
         else:
             for element in elements:
                 guidence_publish_page_anchor = element.find_element(by=By.TAG_NAME, value="a")
@@ -91,18 +97,18 @@ def get_guidence_publish_pages(
                         )
                     )
     else:
-        logger.warning(f"页面 {url} 中找不到任何有效数据。")
+        logging.warning(f"页面 {url} 中找不到任何有效数据。")
 
     return guidence_publish_page_list
 
 
-def get_accessories(url: str, driver: webdriver.Firefox) -> list[Accessory]:
+def get_accessories(url: str, driver: WebDriver) -> list[Accessory]:
     """
     获取单个页面的附件。
 
     Args:
         url (str): 单个页面的 url。
-        driver (webdriver.Firefox): WebDriver 实例。
+        driver (WebDriver): WebDriver 实例。
     """
 
     # 附件类型选择器列表
@@ -223,7 +229,7 @@ def get_accessories(url: str, driver: webdriver.Firefox) -> list[Accessory]:
                 Accessory(accessory_text, accessory_anchor_title, accessory_anchor_text, accessory_anchor_href)
             )
     else:
-        logger.info(f"页面 {url} 中找不到附件。")
+        logging.info(f"页面 {url} 中找不到附件。")
 
     purify_accessories(accessory_list)
 
@@ -264,7 +270,7 @@ def purify_accessories(accessories: list[Accessory]) -> list[Accessory]:
 
         # 跳过不需要的文件
         if any([regex.search(anchor_title) for regex in regex_filter_title_list]):
-            logger.info(f"过滤附件：{anchor_title}")
+            logging.info(f"过滤附件：{anchor_title}")
             accessories.pop(i)
 
         # 处理文件名中的多余字符
