@@ -1,3 +1,4 @@
+import argparse
 import concurrent.futures
 import datetime
 import logging
@@ -33,12 +34,21 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 # 要爬取的网页地址
-MAX_PAGE: int = 63
+MAX_PAGE: int = 62
 url_collection: list[str] = ["https://www.cmde.org.cn/flfg/zdyz/index.html"]
-url_collection.extend(list(map(lambda x: f"https://www.cmde.org.cn/flfg/zdyz/index_{x}.html", range(1, MAX_PAGE))))
+url_collection.extend(list(map(lambda x: f"https://www.cmde.org.cn/flfg/zdyz/index_{x}.html", range(1, MAX_PAGE + 1))))
 
-TARGET_PAGE: int = 25
-url_collection = [url_collection[TARGET_PAGE]]
+# 命令行参数
+parser = argparse.ArgumentParser(description="Crawl guidance publish pages.")
+parser.add_argument("--page", type=int, help="The page number to crawl.")
+args = parser.parse_args()
+
+TARGET_PAGE: int = args.page
+if 0 <= TARGET_PAGE < MAX_PAGE:
+    url_collection = [url_collection[TARGET_PAGE]]
+else:
+    logger.error(f"Invalid page number: {TARGET_PAGE}, it must >= 0 or <= {MAX_PAGE}.")
+    sys.exit()
 
 # 目标日期范围
 start_date: datetime.date = datetime.date(2007, 1, 1)
@@ -273,8 +283,6 @@ def main():
     render_markdown(read_pickle_file(guidence_pickle_path), guidence_list_path)
 
     logger.info("完成")
-
-    sys.exit()
 
 
 if __name__ == "__main__":

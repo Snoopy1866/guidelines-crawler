@@ -6,6 +6,31 @@
 
 ![example](example.png)
 
+## Usage
+
+1. Clone this repository
+
+   ```bash
+   git clone https://github.com/Snoopy1866/guidelines-crawler.git
+   ```
+
+2. Install requirements
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Run crawler
+
+   ```bash
+   python -m crawler --page 0
+   ```
+
+> [!TIP]
+>
+> If you want to crawler page _x_, just pass the _--page_ argument.
+> For example, if you want to crawl from https://www.cmde.org.cn/flfg/zdyz/index_8.html, run `python -m crawler --page 8`.
+
 ## Pickle 文件
 
 [guidences.pickle](guidences.pickle) 文件是一个持久化的 `GuidencePublishPage` 列表，你可以使用 Python 的内置库 [pickle](https://docs.python.org/3/library/pickle.html) 查看具体数据。

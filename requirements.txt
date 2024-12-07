@@ -2,3 +2,5 @@ colorlog==6.9.0
 requests==2.32.3
 selenium==4.27.1
 urllib3==2.2.3
+
+ruff==0.8.2
