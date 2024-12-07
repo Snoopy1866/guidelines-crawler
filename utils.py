@@ -45,8 +45,8 @@ class Accessory:
         检查附件是否有效，无效附件将被过滤。
         """
         regex_filter_title_list = [
-            re.compile(r"反馈意见表"),
-            re.compile(r"征求意见表"),
+            re.compile(r"意见表"),
+            re.compile(r"建议表"),
             re.compile(r"信息征集表"),
             re.compile(r"意见反馈表"),
             re.compile(r"联系方式"),
@@ -111,7 +111,9 @@ class Accessory:
             purified_title = re.sub(r"[（）]$", "", purified_title)
 
         # 删除书名号
-        purified_title = re.sub(rf"^《(.+)》\s*(\.{file_extension_without_dot})?$", r"\1\2", purified_title)
+        purified_title = re.sub(
+            rf"^《(.+)》\s*(（征求意见稿）)?\s*(\.{file_extension_without_dot})?$", r"\1\2\3", purified_title
+        )
 
         # 将文件名中的非法字符替换为连字符
         purified_title = re.sub(r"[\\/:*?\"<>|]", "-", purified_title)
