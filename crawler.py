@@ -23,14 +23,10 @@ lock = threading.Lock()
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-file_handler = logging.FileHandler("output.log", encoding="utf-8")
-file_handler.setLevel(logging.INFO)
-
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
 
 # logger.addHandler(file_handler)
@@ -41,7 +37,7 @@ MAX_PAGE: int = 63
 url_collection: list[str] = ["https://www.cmde.org.cn/flfg/zdyz/index.html"]
 url_collection.extend(list(map(lambda x: f"https://www.cmde.org.cn/flfg/zdyz/index_{x}.html", range(1, MAX_PAGE))))
 
-TARGET_PAGE: int = 21
+TARGET_PAGE: int = 25
 url_collection = [url_collection[TARGET_PAGE]]
 
 # 目标日期范围
