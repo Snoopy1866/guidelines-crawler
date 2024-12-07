@@ -44,3 +44,4 @@ jobs:
           commit-message: "Update guidelines"
           branch: "update-guidelines"
           title: "Update guidelines"
+          body: "This PR updates the guidelines by crawling from page ${{ github.event.inputs.page }}."
