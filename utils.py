@@ -31,14 +31,22 @@ class GuidencePublishPage:
     date: datetime.date
     accessories: list[Accessory]
 
+    def __eq__(self, other: GuidencePublishPage) -> bool:
+        return (
+            self.title == other.title
+            and self.url == other.url
+            and self.date == other.date
+            and self.accessories == other.accessories
+        )
+
 
 @dataclasses.dataclass
 class Accessory:
-    content: str
-    anchor_title: str
-    anchor_content: str
-    anchor_href: str
-    anchor_text_value: str
+    content: str = ""
+    anchor_title: str = ""
+    anchor_content: str = ""
+    anchor_href: str = ""
+    anchor_text_value: str = ""
 
     purified_title: str = ""
     is_valid: bool = True
@@ -50,6 +58,15 @@ class Accessory:
         self.anchor_text_value = self.anchor_text_value.strip()
         self.purified_title = self.get_purified_title()
         self.check_valid()
+
+    def __eq__(self, other: Accessory) -> bool:
+        return (
+            self.content == other.content
+            and self.anchor_title == other.anchor_title
+            and self.anchor_content == other.anchor_content
+            and self.anchor_href == other.anchor_href
+            and self.anchor_text_value == other.anchor_text_value
+        )
 
     def check_valid(self) -> bool:
         """
@@ -491,6 +508,11 @@ def update_pickle_file(new_data: list[GuidencePublishPage], file_path: str) -> N
         # 读取 pickle 文件
         with open(file_path, "rb") as f:
             old_data: list[GuidencePublishPage] = pickle.load(f)
+
+        # 数据无变化，无需更新
+        if old_data == new_data:
+            return
+
         # 合并数据
         old_gpp_urls = [gpp.url for gpp in old_data]
         for new_gpp in new_data:
