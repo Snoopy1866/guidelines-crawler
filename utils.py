@@ -511,6 +511,7 @@ def update_pickle_file(new_data: list[GuidencePublishPage], file_path: str) -> N
 
         # 数据无变化，无需更新
         if old_data == new_data:
+            logger.info("数据无变化，无需更新")
             return
 
         # 合并数据
