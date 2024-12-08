@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       page:
-        description: "Page to crawl"
+        description: "Page index to crawl"
         required: true
         default: "0"
 
@@ -59,11 +59,23 @@ jobs:
             python -m crawler --page ${{ steps.set-page.outputs.page }}
           fi
 
-      - name: Create Pull Request
+      - name: Create Pull Request for Schedule
+        if: github.event_name == 'schedule'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: update guidelines"
-          branch: "update-guidelines"
-          title: "chore: update guidelines"
-          body: "This PR auto-updates the guidelines by crawling from page ${{ steps.set-link.outputs.link }}."
+          commit-message: "chore: update as scheduled"
+          branch: "update-scheduled"
+          title: "chore: update as scheduled"
+          body: "This PR auto-updates data by crawling from page ${{ steps.set-link.outputs.link }} as scheduled."
+
+      - name: Create Pull Request for Workflow Dispatch
+        if: github.event_name == 'workflow_dispatch'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update manually"
+          branch: "update-manually"
+          branch-suffix: timestamp
+          title: "chore: update manually"
+          body: "This PR auto-updates data by crawling from page ${{ steps.set-link.outputs.link }} manually."
