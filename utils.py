@@ -419,7 +419,7 @@ def create_driver() -> WebDriver:
 # 创建 session
 def create_session() -> requests.Session:
     retry_strategy = Retry(
-        total=10,
+        total=5,
         status_forcelist=[443, 500, 502, 503, 504],
         backoff_factor=1,
     )
