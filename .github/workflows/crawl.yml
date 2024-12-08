@@ -2,7 +2,7 @@ name: Crawl
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */4 * * *"
   workflow_dispatch:
     inputs:
       page:
@@ -23,6 +23,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set Page Number
+        id: set-page
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "::set-output name=page::0"
+          else
+            echo "::set-output name=page::${{ github.event.inputs.page }}"
+          fi
+
+      - name: Set Link
+        id: set-link
+        run: |
+          if [ "${{ steps.set-page.outputs.page }}" == "0" ]; then
+            echo "::set-output name=link::https://www.cmde.org.cn/flfg/zdyz/index.html"
+          else
+            echo "::set-output name=link::https://www.cmde.org.cn/flfg/zdyz/index_${{ steps.set-page.outputs.page }}.html"
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -35,17 +53,17 @@ jobs:
 
       - name: Run Crawler
         run: |
-          if [ "${{github.event_name }}" == "schedule" ]; then
+          if [ "${{ github.event_name }}" == "schedule" ]; then
             python -m crawler --page 0
           else
-            python -m crawler --page ${{ github.event.inputs.page }}
+            python -m crawler --page ${{ steps.set-page.outputs.page }}
           fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Update guidelines"
+          commit-message: "chore: update guidelines"
           branch: "update-guidelines"
-          title: "Update guidelines"
-          body: "This PR updates the guidelines by crawling from page ${{ github.event.inputs.page }}."
+          title: "chore: update guidelines"
+          body: "This PR auto-updates the guidelines by crawling from page ${{ steps.set-link.outputs.link }}."
