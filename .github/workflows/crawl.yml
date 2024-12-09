@@ -77,6 +77,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: update manually"
           branch: "update-manually"
-          branch-suffix: timestamp
           title: "chore: update manually"
           body: "This PR auto-updates data by crawling from page ${{ steps.set-link.outputs.link }} manually."
