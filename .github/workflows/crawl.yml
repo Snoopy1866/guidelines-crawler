@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   crawl:
+    name: Crawl Job for Page Index ${{ github.event.inputs.page }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
