@@ -35,17 +35,24 @@
 
 [guidences.pickle](guidences.pickle) 文件是一个持久化的 `GuidencePublishPage` 列表，你可以使用 Python 的内置库 [pickle](https://docs.python.org/3/library/pickle.html) 查看具体数据。
 
-[guidences.pickle](guidences.pickle) 包含以下信息：
+`GuidencePublishPage` 的定义如下：
 
-- `title`: 指导原则发布页标题
-- `url`: 指导原则发布页链接
-- `date`: 指导原则发布页日期
-- `accessories`: 指导原则发布页附件，一个 `Accessory` 列表
-  - `anchor_title`: 附件标题
-  - `anchor_href`: 附件链接
-  - `anchor_content`: 备选标题 1
-  - `content`: 备选标题 2
-  - `anchor_text_value`: 备选标题 3
+```python
+@dataclass
+class GuidencePublishPage:
+    title: str # 指导原则发布页标题
+    url: str # 指导原则发布页链接
+    date: datetime.date #指导原则发布页日期
+    accessories: list[Accessory] #指导原则发布页附件，一个 `Accessory` 列表
+
+@dataclass
+class Accessory:
+    anchor_title: str #附件标题
+    anchor_href: str #附件链接
+    anchor_content: str #备选标题 1
+    content: str #备选标题 2
+    anchor_text_value: str #备选标题 3
+```
 
 ## 声明
 
