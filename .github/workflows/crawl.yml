@@ -28,18 +28,18 @@ jobs:
         id: set-page
         run: |
           if [ "${{ github.event_name }}" == "schedule" ]; then
-            echo "::set-output name=page::0"
+            echo "page=0" >> $GITHUB_ENV
           else
-            echo "::set-output name=page::${{ github.event.inputs.page }}"
+            echo "page=${{ github.event.inputs.page }}" >> $GITHUB_ENV
           fi
 
       - name: Set Link
         id: set-link
         run: |
           if [ "${{ steps.set-page.outputs.page }}" == "0" ]; then
-            echo "::set-output name=link::https://www.cmde.org.cn/flfg/zdyz/index.html"
+            echo "link=https://www.cmde.org.cn/flfg/zdyz/index.html" >> $GITHUB_ENV
           else
-            echo "::set-output name=link::https://www.cmde.org.cn/flfg/zdyz/index_${{ steps.set-page.outputs.page }}.html"
+            echo "link=https://www.cmde.org.cn/flfg/zdyz/index_${{ steps.set-page.outputs.page }}.html" >> $GITHUB_ENV
           fi
 
       - name: Set up Python
@@ -60,17 +60,19 @@ jobs:
             python -m crawler --page ${{ steps.set-page.outputs.page }}
           fi
 
-      - name: Create Pull Request for Schedule
+      - name: Check for changes (Only for scheduled runs)
         if: github.event_name == 'schedule'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: update as scheduled"
-          branch: "update-scheduled"
-          title: "chore: update as scheduled"
-          body: "This PR auto-updates data by crawling from page ${{ steps.set-link.outputs.link }} as scheduled."
+        run: |
+          git diff --exit-code || echo "has_changes=true" >> $GITHUB_ENV
 
-      - name: Create Pull Request for Workflow Dispatch
+      - name: Commit changes (Only for scheduled runs)
+        if: ${{ github.event_name == 'schedule' && env.has_changes == 'true' }}
+        run: |
+          git add .
+          git commit -m "chore: update as scheduled"
+          git push origin main
+
+      - name: Create Pull Request (Only for manual runs)
         if: github.event_name == 'workflow_dispatch'
         uses: peter-evans/create-pull-request@v7
         with:
