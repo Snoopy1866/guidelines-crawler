@@ -88,12 +88,26 @@ class Accessory:
         """
         获取附件文件名处理的结果。
         """
+        anchor_href = self.anchor_href
 
         content = self.content
-        anchor_href = self.anchor_href
         anchor_title = self.anchor_title
-        anchor_text = self.anchor_content
+        anchor_content = self.anchor_content
         anchor_text_value = self.anchor_text_value
+
+        # 定义预处理正则表达式
+        regex_preprocess_list = [
+            (re.compile(r"^(相关)?附件[：:]"), ""),
+            (re.compile(r"^\d*[、]"), ""),
+            (re.compile(r"\("), "（"),
+            (re.compile(r"\)"), "）"),
+        ]
+
+        for pattern, repl in regex_preprocess_list:
+            content = re.sub(pattern, repl, content)
+            anchor_title = re.sub(pattern, repl, anchor_title)
+            anchor_content = re.sub(pattern, repl, anchor_content)
+            anchor_text_value = re.sub(pattern, repl, anchor_text_value)
 
         # 拆分文件名和扩展名
         _, file_extension = os.path.splitext(anchor_href)
@@ -114,9 +128,9 @@ class Accessory:
         elif anchor_title == "":
             # 如果 anchor_title 为空
             purified_title = content or anchor_text_value
-        else:
-            # 其他情况，优先级：anchor_title > anchor_text > content
-            purified_title = anchor_title or anchor_text or content or anchor_text_value
+
+        if not purified_title:
+            purified_title = anchor_content
 
         # 处理文件名中的多余字符
         # eg.
@@ -129,7 +143,7 @@ class Accessory:
         )
 
         # 删除“（下载）”
-        purified_title = re.sub(r"[（(]?下载[)）]?", "", purified_title)
+        purified_title = re.sub(r"（?下载）?", "", purified_title)
 
         # 删除开头的“（”或“）”
         purified_title = re.sub(r"^[（）]", "", purified_title)
