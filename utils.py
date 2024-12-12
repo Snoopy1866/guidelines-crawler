@@ -81,6 +81,7 @@ class Accessory:
             re.compile(r"信息征集"),
             re.compile(r"意见反馈表"),
             re.compile(r"联系方式"),
+            re.compile(r"修(改|订)说明"),
         ]
         if any([regex.search(self.purified_title) for regex in regex_filter_title_list]):
             logger.info(f"过滤附件：{self.purified_title}")
@@ -125,7 +126,7 @@ class Accessory:
                 ),
                 (
                     "https://www.cmde.org.cn/images/1352957200488.doc",
-                    "硬性角膜接触镜说明书编写指导原则（征求意见稿） & 软性亲水接触镜说明书编写指导原则（第三次征求意见稿）",
+                    "硬性角膜接触镜说明书编写指导原则（征求意见稿） & 软性亲水接触镜说明书编写指导原则（第三次征求意见稿）.doc",
                 ),
                 (
                     "https://www.cmde.org.cn/images/1347517435279.doc",
@@ -145,8 +146,8 @@ class Accessory:
 
         # 定义预处理正则表达式
         regex_preprocess_list = [
-            (re.compile(r"^(相关)?附件\d*[：:]"), ""),
-            (re.compile(r"^\d*[、．\.]"), ""),
+            (re.compile(r"^(相关)?附件[：]?"), ""),
+            (re.compile(r"^[一二三四五六七八九十]*\d*[：:、．\.]?"), ""),
             (re.compile(r"\("), "（"),
             (re.compile(r"\)"), "）"),
         ]
@@ -178,6 +179,8 @@ class Accessory:
         elif anchor_title == "":
             # 如果 anchor_title 为空
             purified_title = content or anchor_text_value
+        else:
+            purified_title = anchor_title
 
         if not purified_title or "\n" in purified_title:
             purified_title = anchor_content
@@ -212,11 +215,12 @@ class Accessory:
 
         # 检查 title 是否有扩展名，没有则添加
         if not purified_title.endswith(file_extension):
-            purified_title += file_extension
+            purified_title_body = os.path.splitext(purified_title)[0]
+            purified_title = purified_title_body + file_extension
 
-        # 如果最终的文件名为空，则使用 anchor_href 的最后一部分作为文件名
+        # 如果最终的文件名为空，则使用 “未获取产品名称-指导原则.file_extension” 代替
         if purified_title.replace(file_extension, "") == "":
-            purified_title = anchor_href.split("/")[-1]
+            purified_title = f"未获取产品名-指导原则.{file_extension}"
 
         return purified_title
 
@@ -331,8 +335,12 @@ def get_accessories(url: str, driver: WebDriver) -> list[Accessory]:
     #   <span>附件标题</span>
     # </span>
     # <a href="download_url">下载</a>
-    # 选择器：span:has(+a:where([href$='.doc'], [href$='.docx']))
-    selector_type_2 = "span:has(+a:where(" + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list)) + "))"
+    # 选择器：span:has(+a:where([href$='.doc'], [href$='.docx'])):not(:has(+a>span))
+    # 注意：<span> 标签后面不能是含有 <span> 的 <a> 标签，以下页面不符合条件，不会被选中。
+    # eg: https://www.cmde.org.cn/flfg/zdyz/zqyjg/20141226141700739.html
+    selector_type_2 = (
+        "span:has(+a:where(" + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list)) + ")):not(:has(+a>span))"
+    )
 
     # https://www.cmde.org.cn/flfg/zdyz/fbg/fbgyy/20140723155501232.html
 
@@ -374,8 +382,14 @@ def get_accessories(url: str, driver: WebDriver) -> list[Accessory]:
     # <span>附件标题</span>
     # <img>
     # <a href="download_url">下载</a>
-    # 选择器：span:has(+img + a:where([href$='.doc'], [href$='.docx']))
-    selector_type_6 = "span:has(+img + a:where(" + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list)) + "))"
+    # 选择器：span:has(+img + a:where([href$='.doc'], [href$='.docx'])):not(:has(+img+a>span))
+    # 注意：<span> 标签后面不能是 <img> 标签，其中 <img> 标签后面是 <span> 的 <a> 标签，以下页面不符合条件，不会被选中。
+    # eg: https://www.cmde.org.cn/flfg/zdyz/zqyjg/20141226141700739.html
+    selector_type_6 = (
+        "span:has(+img + a:where("
+        + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list))
+        + ")):not(:has(+img+a>span))"
+    )
 
     # 类型7
     # https://www.cmde.org.cn/flfg/zdyz/zqyjg/20220623164120132.html
@@ -387,10 +401,22 @@ def get_accessories(url: str, driver: WebDriver) -> list[Accessory]:
     selector_type_7 = "br:has(+img + a:where(" + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list)) + "))"
 
     # 类型8
+    # https://www.cmde.org.cn/flfg/zdyz/zqyjg/20141219161400165.html
+    # <a href="download_url">
+    #   <span>附件标题
+    # </a>
+    # 选择器：a:not(:has(>span>img)):has(>span):where([href$='.doc'], [href$='.docx'])
+    selector_type_8 = (
+        "a:not(:has(>span>img)):has(>span):where("
+        + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list))
+        + ")"
+    )
+
+    # 类型9
     # https://www.cmde.org.cn/flfg/zdyz/zqyjg/20100212074430257.html
     # <a href="download_url">附件标题</a>
     # 选择器：a:where([href$='.doc'], [href$='.docx'])
-    selector_type_8 = "a:where(" + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list)) + ")"
+    selector_type_9 = "a:where(" + ",".join(map(lambda x: f"[href$='{x}']", file_extension_list)) + ")"
 
     if elements := driver.find_elements(by=By.CSS_SELECTOR, value=selector_type_1):
         for element in elements:
@@ -456,6 +482,15 @@ def get_accessories(url: str, driver: WebDriver) -> list[Accessory]:
             anchor_content = anchor.text
             accessory_list.append(Accessory(content, anchor_title, anchor_content, anchor_href, anchor_text_value))
     elif elements := driver.find_elements(by=By.CSS_SELECTOR, value=selector_type_8):
+        for element in elements:
+            content = element.find_element(by=By.TAG_NAME, value="span").text
+            anchor = element
+            anchor_title = anchor.get_attribute("title")
+            anchor_href = anchor.get_attribute("href")
+            anchor_text_value = anchor.get_attribute("textvalue") or ""
+            anchor_content = anchor.text
+            accessory_list.append(Accessory(content, anchor_title, anchor_content, anchor_href, anchor_text_value))
+    elif elements := driver.find_elements(by=By.CSS_SELECTOR, value=selector_type_9):
         for element in elements:
             content = ""
             anchor = element
@@ -579,18 +614,34 @@ def update_pickle_file(new_data: list[GuidencePublishPage], file_path: str) -> N
             return
 
         # 合并数据
-        old_gpp_urls = [gpp.url for gpp in old_data]
+        old_gpp_url_list = [gpp.url for gpp in old_data]
         for new_gpp in new_data:
-            if new_gpp.url not in old_gpp_urls:
+            if new_gpp.url not in old_gpp_url_list:
                 old_data.append(new_gpp)
             else:
-                old_acc = old_data[old_gpp_urls.index(new_gpp.url)].accessories
-                old_acc_urls = [acc.anchor_href for acc in old_acc]
-                for new_acc in new_gpp.accessories:
-                    if new_acc.anchor_href not in old_acc_urls:
-                        old_acc.append(new_acc)
+                old_acc = old_data[old_gpp_url_list.index(new_gpp.url)].accessories
+                new_acc = new_gpp.accessories
+                old_acc_url_list = [acc.anchor_href for acc in old_acc]
+                new_acc_url_list = [acc.anchor_href for acc in new_acc]
+
+                final_acc: list[Accessory] = []
+
+                for old_acc_item in old_acc:
+                    # 移除不在新数据中的附件
+                    if old_acc_item.anchor_href not in new_acc_url_list:
+                        continue
                     else:
-                        old_acc[old_acc_urls.index(new_acc.anchor_href)] = new_acc
+                        final_acc.append(old_acc_item)
+
+                for new_acc_item in new_acc:
+                    final_acc_url_list = [acc.anchor_href for acc in final_acc]
+                    # 添加新的附件
+                    if new_acc_item.anchor_href not in final_acc_url_list:
+                        final_acc.append(new_acc_item)
+                    else:
+                        final_acc[final_acc_url_list.index(new_acc_item.anchor_href)] = new_acc_item
+
+                old_data[old_gpp_url_list.index(new_gpp.url)].accessories = final_acc
     else:
         old_data = new_data
 
