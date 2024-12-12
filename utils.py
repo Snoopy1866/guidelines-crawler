@@ -50,6 +50,7 @@ class Accessory:
 
     purified_title: str = ""
     is_valid: bool = True
+    is_link_available: bool = True
 
     def __post_init__(self):
         self.content = self.content.strip()
@@ -70,25 +71,72 @@ class Accessory:
 
     def check_valid(self) -> bool:
         """
-        检查附件是否有效，无效附件将被过滤。
+        检查附件的有效性。
         """
+
+        # 非指导原则的附件
         regex_filter_title_list = [
             re.compile(r"意见表"),
             re.compile(r"建议表"),
-            re.compile(r"信息征集表"),
+            re.compile(r"信息征集"),
             re.compile(r"意见反馈表"),
             re.compile(r"联系方式"),
         ]
-
         if any([regex.search(self.purified_title) for regex in regex_filter_title_list]):
             logger.info(f"过滤附件：{self.purified_title}")
             self.is_valid = False
+
+        # 需要手动处理的非指导原则附件
+        dict_manual_filter_title = (
+            "https://www.cmde.org.cn/directory/web/cmde/images/1363159189788.docx",
+            "https://www.cmde.org.cn/directory/web/cmde/images/1359083557479.doc",
+        )
+        if self.anchor_href in dict_manual_filter_title:
+            logger.info(f"过滤附件：{self.anchor_href}")
+            self.is_valid = False
+
+        # 链接失效的附件
+        regex_link_not_avaliable = re.compile(r"^https?://www.sf?da.gov.cn/.*$")
+        if re.match(regex_link_not_avaliable, self.anchor_href):
+            logger.info(f"链接失效：{self.anchor_href}")
+            self.is_link_available = False
 
     def get_purified_title(self) -> str:
         """
         获取附件文件名处理的结果。
         """
+
         anchor_href = self.anchor_href
+
+        # 需手动处理的文件名
+        dict_manual_purified_title = dict(
+            (
+                (
+                    "https://www.cmde.org.cn/images/1357709569187.doc",
+                    "医用磁共振成像系统注册申报资料指导原则（征求意见稿）.doc",
+                ),
+                (
+                    "https://www.cmde.org.cn/directory/web/cmde/images/1359083546574.doc",
+                    "医用磁共振成像系统注册申报资料指导原则（征求意见稿）.doc",
+                ),
+                (
+                    "https://www.cmde.org.cn/images/1352957627987.doc",
+                    "疝修补补片产品注册技术审查指导原则（征求意见稿）.doc",
+                ),
+                (
+                    "https://www.cmde.org.cn/images/1352957200488.doc",
+                    "硬性角膜接触镜说明书编写指导原则（征求意见稿） & 软性亲水接触镜说明书编写指导原则（第三次征求意见稿）",
+                ),
+                (
+                    "https://www.cmde.org.cn/images/1347517435279.doc",
+                    "乙型肝炎病毒DNA定量检测试剂注册申报资料技术指导原则.doc",
+                ),
+            )
+        )
+
+        if anchor_href in dict_manual_purified_title:
+            purified_title = dict_manual_purified_title[anchor_href]
+            return purified_title
 
         content = self.content
         anchor_title = self.anchor_title
@@ -97,8 +145,8 @@ class Accessory:
 
         # 定义预处理正则表达式
         regex_preprocess_list = [
-            (re.compile(r"^(相关)?附件[：:]"), ""),
-            (re.compile(r"^\d*[、]"), ""),
+            (re.compile(r"^(相关)?附件\d*[：:]"), ""),
+            (re.compile(r"^\d*[、．\.]"), ""),
             (re.compile(r"\("), "（"),
             (re.compile(r"\)"), "）"),
         ]
@@ -112,6 +160,8 @@ class Accessory:
         # 拆分文件名和扩展名
         _, file_extension = os.path.splitext(anchor_href)
         file_extension_without_dot = file_extension[1:]
+
+        purified_title: str = ""
 
         if re.search(r"通告(\d+号)?附件", anchor_title):
             # 如果 anchor_title 匹配 "通告\d+号附件"
@@ -129,7 +179,7 @@ class Accessory:
             # 如果 anchor_title 为空
             purified_title = content or anchor_text_value
 
-        if not purified_title:
+        if not purified_title or "\n" in purified_title:
             purified_title = anchor_content
 
         # 处理文件名中的多余字符
@@ -154,7 +204,7 @@ class Accessory:
 
         # 删除书名号
         purified_title = re.sub(
-            rf"^《(.+)》\s*(（征求意见稿）)?\s*(\.{file_extension_without_dot})?$", r"\1\2\3", purified_title
+            rf"^《(.+)》\s*(（(?:第.+次)?征求意见稿）)?\s*(\.{file_extension_without_dot})?$", r"\1\2\3", purified_title
         )
 
         # 将文件名中的非法字符替换为连字符
@@ -490,7 +540,7 @@ def download_accessory(guidence_publish_page: GuidencePublishPage, timeout: int)
     os.makedirs(save_dir, exist_ok=True)
 
     for accessory in guidence_publish_page.accessories:
-        if not accessory.is_valid:
+        if not accessory.is_valid or not accessory.is_link_available:
             continue
         save_path = os.path.join(save_dir, accessory.purified_title)
         if os.path.exists(save_path):
@@ -576,12 +626,19 @@ def render_markdown(guidence_publish_page_list: list[GuidencePublishPage], file_
         # 表格各列内容
         markdown_date = f"<a href='guidences/{page.date}'>{page.date}</a>"
         markdown_title = f"<a href='{page.url}' target='_blank'>{page.title}</a>"
-        valid_accessories = [
-            f'<li><a href="{accessory.anchor_href}">{accessory.purified_title}</a></li>'
-            for accessory in page.accessories
-            if accessory.is_valid
-        ]
-        markdown_accessories = f"<ul>{''.join(valid_accessories)}</ul>"
+
+        markdown_accessories_list: list[str] = []
+        for accessory in page.accessories:
+            if accessory.is_valid:
+                if accessory.is_link_available:
+                    markdown_accessories_list.append(
+                        f'<li><a href="{accessory.anchor_href}">{accessory.purified_title}</a></li>'
+                    )
+                else:
+                    markdown_accessories_list.append(
+                        f'<li><a href="{accessory.anchor_href}">{accessory.purified_title}</a>（链接已失效）</li>'
+                    )
+        markdown_accessories = f"<ul>{''.join(markdown_accessories_list)}</ul>"
 
         # 如果当前行的日期与上一行的日期不同，则添加日期信息
         if current_row_date is None or page.date != current_row_date:
