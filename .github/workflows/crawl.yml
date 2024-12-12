@@ -25,18 +25,18 @@ jobs:
         id: set-page
         run: |
           if [ "${{ github.event_name }}" == "schedule" ]; then
-            echo "page=0" >> $GITHUB_ENV
+            echo "page=0" >> $GITHUB_OUTPUT
           else
-            echo "page=${{ github.event.inputs.page }}" >> $GITHUB_ENV
+            echo "page=${{ github.event.inputs.page }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Set Link
         id: set-link
         run: |
           if [ "${{ steps.set-page.outputs.page }}" == "0" ]; then
-            echo "link=https://www.cmde.org.cn/flfg/zdyz/index.html" >> $GITHUB_ENV
+            echo "link=https://www.cmde.org.cn/flfg/zdyz/index.html" >> $GITHUB_OUTPUT
           else
-            echo "link=https://www.cmde.org.cn/flfg/zdyz/index_${{ steps.set-page.outputs.page }}.html" >> $GITHUB_ENV
+            echo "link=https://www.cmde.org.cn/flfg/zdyz/index_${{ steps.set-page.outputs.page }}.html" >> $GITHUB_OUTPUT
           fi
 
   crawl:
@@ -66,7 +66,7 @@ jobs:
         id: check-diff
         if: github.event_name == 'schedule'
         run: |
-          git diff --exit-code || echo "has_changes=true" >> $GITHUB_ENV
+          git diff --exit-code || echo "has_changes=true" >> $GITHUB_OUTPUT
 
       - name: Commit changes (Only for scheduled runs)
         if: ${{ github.event_name == 'schedule' && steps.check-diff.outputs.has_changes == 'true' }}
