@@ -15,15 +15,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  crawl:
-    name: Crawl Job for Page Index ${{ github.event.inputs.page }}
+  set-env-variables:
     runs-on: ubuntu-latest
+    outputs:
+      page: ${{ steps.set-page.outputs.page }}
+      link: ${{ steps.set-link.outputs.link }}
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Set Page Number
         id: set-page
         run: |
@@ -42,6 +39,15 @@ jobs:
             echo "link=https://www.cmde.org.cn/flfg/zdyz/index_${{ steps.set-page.outputs.page }}.html" >> $GITHUB_ENV
           fi
 
+  crawl:
+    needs: set-env-variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -54,19 +60,16 @@ jobs:
 
       - name: Run Crawler
         run: |
-          if [ "${{ github.event_name }}" == "schedule" ]; then
-            python -m crawler --page 0
-          else
-            python -m crawler --page ${{ steps.set-page.outputs.page }}
-          fi
+          python -m crawler --page ${{ needs.set-env-variables.outputs.page }}
 
       - name: Check for changes (Only for scheduled runs)
+        id: check-diff
         if: github.event_name == 'schedule'
         run: |
           git diff --exit-code || echo "has_changes=true" >> $GITHUB_ENV
 
       - name: Commit changes (Only for scheduled runs)
-        if: ${{ github.event_name == 'schedule' && env.has_changes == 'true' }}
+        if: ${{ github.event_name == 'schedule' && steps.check-diff.outputs.has_changes == 'true' }}
         run: |
           git add .
           git commit -m "chore: update as scheduled"
@@ -80,4 +83,4 @@ jobs:
           commit-message: "chore: update manually"
           branch: "update-manually"
           title: "chore: update manually"
-          body: "This PR auto-updates data by crawling from page ${{ steps.set-link.outputs.link }} manually."
+          body: "This PR auto-updates data by crawling from page ${{ needs.set-env-variables.outputs.link }} manually."
