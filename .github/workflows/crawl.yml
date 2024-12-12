@@ -62,6 +62,12 @@ jobs:
         run: |
           python -m crawler --page ${{ needs.set-env-variables.outputs.page }}
 
+      - name: Configure Git
+        if: github.event_name == 'schedule'
+        run: |
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Check for changes (Only for scheduled runs)
         id: check-diff
         if: github.event_name == 'schedule'
