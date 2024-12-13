@@ -77,12 +77,13 @@ def main():
                 try:
                     result = future.result(timeout=timeout)
                     guidence_publish_pages.extend(result)
-                    logging.info(f"成功从 {url} 获取页面")
                 except concurrent.futures.TimeoutError:
                     logger.error(f"Timeout occurred for fetching pages from {url}.")
                     future.cancel()
                 except Exception as e:
                     logger.error(f"Failed to fetch pages from {url}: {e}.")
+                else:
+                    logging.info(f"成功从 {url} 获取页面")
         except Exception as e:
             logger.error(f"An error occurred: {e}.")
 
@@ -105,12 +106,14 @@ def main():
                 url = futures[future].url
                 try:
                     future.result(timeout=timeout)
-                    logging.info(f"成功从 {url} 获取附件信息")
                 except concurrent.futures.TimeoutError:
                     logger.error(f"Timeout occurred for fetching accessories from {url}.")
                     future.cancel()
                 except Exception as e:
                     logger.error(f"Failed to fetch accessories from {url}: {e}.")
+                    sys.exit()
+                else:
+                    logging.info(f"成功从 {url} 获取附件信息")
         except Exception as e:
             logger.error(f"An error occurred: {e}.")
 
@@ -127,12 +130,13 @@ def main():
                 url = futures[future].url
                 try:
                     future.result(timeout=timeout)
-                    logging.info(f"成功从 {url} 下载附件")
                 except concurrent.futures.TimeoutError:
                     logger.error(f"Timeout occurred for downloading accessories from {url}.")
                     future.cancel()
                 except Exception as e:
                     logger.error(f"Failed to download accessories from {url}: {e}.")
+                else:
+                    logging.info(f"成功从 {url} 下载附件")
         except Exception as e:
             logger.error(f"An error occurred: {e}.")
 
