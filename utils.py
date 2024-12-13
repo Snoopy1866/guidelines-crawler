@@ -79,7 +79,7 @@ class Accessory:
             re.compile(r"意见表"),
             re.compile(r"建议表"),
             re.compile(r"信息征集"),
-            re.compile(r"意见反馈表"),
+            re.compile(r"意见(反馈|征集)表"),
             re.compile(r"联系方式"),
             re.compile(r"修(改|订)说明"),
         ]
@@ -108,6 +108,9 @@ class Accessory:
         """
 
         anchor_href = self.anchor_href
+        # 拆分文件名和扩展名
+        _, file_extension = os.path.splitext(anchor_href)
+        file_extension_without_dot = file_extension[1:]
 
         # 需手动处理的文件名
         dict_manual_purified_title = dict(
@@ -150,6 +153,7 @@ class Accessory:
             (re.compile(r"^[一二三四五六七八九十]*\d*[：:、．\.]?"), ""),
             (re.compile(r"\("), "（"),
             (re.compile(r"\)"), "）"),
+            (re.compile(rf"{file_extension_without_dot}$"), ""),
         ]
 
         for pattern, repl in regex_preprocess_list:
@@ -157,10 +161,6 @@ class Accessory:
             anchor_title = re.sub(pattern, repl, anchor_title)
             anchor_content = re.sub(pattern, repl, anchor_content)
             anchor_text_value = re.sub(pattern, repl, anchor_text_value)
-
-        # 拆分文件名和扩展名
-        _, file_extension = os.path.splitext(anchor_href)
-        file_extension_without_dot = file_extension[1:]
 
         purified_title: str = ""
 
@@ -689,7 +689,10 @@ def render_markdown(guidence_publish_page_list: list[GuidencePublishPage], file_
                     markdown_accessories_list.append(
                         f'<li><a href="{accessory.anchor_href}">{accessory.purified_title}</a>（链接已失效）</li>'
                     )
-        markdown_accessories = f"<ul>{''.join(markdown_accessories_list)}</ul>"
+        if markdown_accessories_list:
+            markdown_accessories = f"<ul>{''.join(markdown_accessories_list)}</ul>"
+        else:
+            markdown_accessories = "无附件"
 
         # 如果当前行的日期与上一行的日期不同，则添加日期信息
         if current_row_date is None or page.date != current_row_date:
