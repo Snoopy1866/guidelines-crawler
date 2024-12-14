@@ -3,7 +3,7 @@
 set -e # 在发生错误时退出脚本
 
 # 获取上一个 tag 的名称
-previous_tag=$(git describe --tags --abbrev=0 HEAD^)
+previous_tag=$(git describe --tags --abbrev=0)
 echo "Previous tag: $previous_tag"
 
 # 创建一个临时目录
