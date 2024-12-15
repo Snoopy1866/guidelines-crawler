@@ -46,7 +46,7 @@ def main():
         target_urls = [url_collection[TARGET_PAGE]]
     else:
         logger.error(f"Invalid page number: {TARGET_PAGE}, it must >= 0 and <= {MAX_PAGE}.")
-        sys.exit()
+        sys.exit(1)
 
     # 目标日期范围
     start_date: datetime.date = datetime.date(2007, 1, 1)
@@ -89,7 +89,7 @@ def main():
 
     if not guidence_publish_pages:
         logger.info("没有找到任何页面")
-        sys.exit()
+        sys.exit(1)
     else:
         logger.info(f"找到 {len(guidence_publish_pages)} 个页面")
 
@@ -109,9 +109,10 @@ def main():
                 except concurrent.futures.TimeoutError:
                     logger.error(f"Timeout occurred for fetching accessories from {url}.")
                     future.cancel()
+                    sys.exit(1)
                 except Exception as e:
                     logger.error(f"Failed to fetch accessories from {url}: {e}.")
-                    sys.exit()
+                    sys.exit(1)
                 else:
                     logging.info(f"成功从 {url} 获取附件信息")
         except Exception as e:
