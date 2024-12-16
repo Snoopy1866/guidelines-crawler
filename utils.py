@@ -6,6 +6,7 @@ import logging
 import os
 import pickle
 import re
+import sys
 import requests
 import threading
 
@@ -552,6 +553,7 @@ def fetch_accessory(guidence_publish_page: GuidencePublishPage) -> None:
         guidence_publish_page.accessories = get_accessories(url=url, driver=driver)
     except Exception as e:
         logger.error(f"Failed to fetch accessories from {url}: {e}.")
+        sys.exit(1)
     finally:
         driver.quit()
 
